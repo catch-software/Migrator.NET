@@ -626,42 +626,42 @@ namespace Migrator.Providers
 			return ExecuteNonQuery(String.Format(query, table, namesAndValues));
 		}
 
-	    public virtual int Update(string table, string where, Dictionary<string, object> changes)
+        public virtual int Update(string table, string where, Dictionary<string, object> changes)
         {
             if (string.IsNullOrEmpty(table)) throw new ArgumentNullException("table");
-            
+
             table = QuoteTableNameIfRequired(table);
 
             var sets = new StringBuilder();
 
-	        var columns = changes.Keys.ToArray();
+            var columns = changes.Keys.ToArray();
 
-	        for (int i = 0; i < columns.Length; i++)
-	        {
-	            var column = columns[i];
+            for (int i = 0; i < columns.Length; i++)
+            {
+                var column = columns[i];
                 if (sets.Length > 0) sets.Append(",\r\n");
-	            sets.AppendFormat("{0} = {1}", QuoteColumnNameIfRequired(column), GenerateParameterName(i));
-	        }
+                sets.AppendFormat("{0} = {1}", QuoteColumnNameIfRequired(column), GenerateParameterName(i));
+            }
 
-	        var query = String.Format("UPDATE {0} SET {1} ", table, sets);
+            var query = String.Format("UPDATE {0} SET {1} ", table, sets);
 
-	        if (!string.IsNullOrWhiteSpace(where))
-	        {
-	            query += "\r\n WHERE " + where;
-	        }
+            if (!string.IsNullOrWhiteSpace(where))
+            {
+                query += "\r\n WHERE " + where;
+            }
 
             using (IDbCommand command = _connection.CreateCommand())
             {
                 command.Transaction = _transaction;
                 command.CommandText = query;
                 command.CommandType = CommandType.Text;
-                
+
                 for (int paramCount = 0; paramCount < columns.Length; paramCount++)
                 {
-                    var value = changes[columns[paramCount]];                
+                    var value = changes[columns[paramCount]];
 
                     IDbDataParameter parameter = command.CreateParameter();
-                    
+
                     ConfigureParameterWithValue(parameter, paramCount, value);
 
                     parameter.ParameterName = GenerateParameterName(paramCount);
@@ -671,8 +671,7 @@ namespace Migrator.Providers
 
                 return command.ExecuteNonQuery();
             }
-	    }
-
+        }
 	    public virtual int Insert(string table, string[] columns, object[] values)
 		{
 			if (string.IsNullOrEmpty(table)) throw new ArgumentNullException("table");
@@ -738,6 +737,8 @@ namespace Migrator.Providers
 			{
 				return Delete(table, (string[]) null, null);
 			}
+            if (wherevalue == null)
+                return ExecuteNonQuery(String.Format("DELETE FROM {0} WHERE {1} is null", table, wherecolumn));
 
 			return ExecuteNonQuery(String.Format("DELETE FROM {0} WHERE {1} = {2}", table, wherecolumn, QuoteValues(wherevalue)));
 		}
@@ -1042,6 +1043,9 @@ namespace Migrator.Providers
 			var namesAndValues = new string[columns.Length];
 			for (int i = 0; i < columns.Length; i++)
 			{
+                if (values[i] == null)
+                    namesAndValues[i] = String.Format("{0} is null", columns[i]);
+                else
 				namesAndValues[i] = String.Format("{0}={1}", columns[i], quotedValues[i]);
 			}
 

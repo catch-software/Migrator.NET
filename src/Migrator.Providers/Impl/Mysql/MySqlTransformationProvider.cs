@@ -36,23 +36,7 @@ namespace Migrator.Providers.Mysql
 
         public override bool ConstraintExists(string table, string name)
         {
-            if (!TableExists(table))
-                return false;
-
-            string sqlConstraint = string.Format("SHOW KEYS FROM {0}", table);
-
-            using (IDataReader reader = ExecuteQuery(sqlConstraint))
-            {
-                while (reader.Read())
-                {
-                    if (reader["Key_name"].ToString().ToLower() == name.ToLower())
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            return ForeignKeyExists(table, name);
         }
 
         public bool ForeignKeyExists(string table, string name)
@@ -199,7 +183,23 @@ namespace Migrator.Providers.Mysql
 
         public override bool IndexExists(string table, string name)
         {
-            return ConstraintExists(table, name);
+            if (!TableExists(table))
+                return false;
+
+            string sqlConstraint = string.Format("SHOW KEYS FROM {0}", table);
+
+            using (IDataReader reader = ExecuteQuery(sqlConstraint))
+            {
+                while (reader.Read())
+                {
+                    if (reader["Key_name"].ToString().ToLower() == name.ToLower())
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public override string[] QuoteValues(string[] values)
