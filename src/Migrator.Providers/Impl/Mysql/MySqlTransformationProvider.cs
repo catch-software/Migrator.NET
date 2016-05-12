@@ -66,7 +66,31 @@ namespace Migrator.Providers.Mysql
             return false;
         }
 
-        public override bool PrimaryKeyExists(string table, string name)
+	    public override bool ColumnExists(string table, string column)
+	    {
+			if (!TableExists(table))
+				return false;
+
+		    string sqlConstraint =
+			    $"SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE  TABLE_SCHEMA = Database() AND TABLE_NAME = '{table}' AND COLUMN_NAME = '{column}'";
+
+			using (IDataReader reader = ExecuteQuery(sqlConstraint))
+			{
+				while (reader.Read())
+				{
+					if (reader["COLUMN_NAME"].ToString().ToLower() == column.ToLower())
+					{
+						return true;
+					}
+				}
+			}
+
+			return false;
+			
+
+		}
+
+	    public override bool PrimaryKeyExists(string table, string name)
         {
             return ConstraintExists(table, "PRIMARY");
         }

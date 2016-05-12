@@ -32,6 +32,19 @@ namespace Migrator.Providers.PostgreSQL
 			_connection.Open();
 		}
 
+		protected override void ConfigureParameterWithValue(IDbDataParameter parameter, int index, object value)
+		{
+			bool val;
+			if (value is string && Boolean.TryParse(value.ToString(), out val))
+			{
+				parameter.DbType = DbType.Boolean;
+				parameter.Value = val;
+			}
+			else
+			{
+				base.ConfigureParameterWithValue(parameter, index, value);
+			}
+		}
 		public override void RemoveTable(string name)
 		{
             if (!TableExists(name))
