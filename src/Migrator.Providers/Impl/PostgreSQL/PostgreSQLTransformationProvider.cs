@@ -14,6 +14,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using Migrator.Framework;
 using Npgsql;
 
@@ -24,13 +25,28 @@ namespace Migrator.Providers.PostgreSQL
 	/// </summary>
 	public class PostgreSQLTransformationProvider : TransformationProvider
 	{
-		public PostgreSQLTransformationProvider(Dialect dialect, string connectionString, string defaultSchema)
+	    private readonly string _defaultSchemaConnection;
+
+        public PostgreSQLTransformationProvider(Dialect dialect, string connectionString, string defaultSchema)
 			: base(dialect, connectionString, defaultSchema)
 		{
 			_connection = new NpgsqlConnection();
 			_connection.ConnectionString = _connectionString;
 			_connection.Open();
-		}
+
+		    DbConnectionStringBuilder builder = new DbConnectionStringBuilder();
+		    builder.ConnectionString = connectionString;
+
+
+		    if (builder.ContainsKey("SearchPath"))
+            { 
+		        _defaultSchemaConnection = builder["SearchPath"] as string;
+            }
+		    else
+		    {
+		        _defaultSchemaConnection = "public";
+            }
+        }
 
 		protected override void ConfigureParameterWithValue(IDbDataParameter parameter, int index, object value)
 		{
@@ -58,7 +74,7 @@ namespace Migrator.Providers.PostgreSQL
 		public override bool ConstraintExists(string table, string name)
 		{
 			using (IDataReader reader =
-				ExecuteQuery(string.Format("SELECT constraint_name FROM information_schema.table_constraints WHERE table_schema = 'public' AND constraint_name = lower('{0}')", name)))
+				ExecuteQuery(string.Format("SELECT constraint_name FROM information_schema.table_constraints WHERE table_schema = '" + _defaultSchemaConnection + "' AND constraint_name = lower('{0}')", name)))
 			{
 				return reader.Read();
 			}
@@ -70,7 +86,7 @@ namespace Migrator.Providers.PostgreSQL
 				return false;
 
 			using (IDataReader reader =
-				ExecuteQuery(String.Format("SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = lower('{0}') AND (column_name = lower('{1}') OR column_name = '{1}')", table, column)))
+				ExecuteQuery(String.Format("SELECT column_name FROM information_schema.columns WHERE table_schema = '" + _defaultSchemaConnection + "' AND table_name = lower('{0}') AND (column_name = lower('{1}') OR column_name = '{1}')", table, column)))
 			{
 				return reader.Read();
 			}
@@ -79,7 +95,7 @@ namespace Migrator.Providers.PostgreSQL
 		public override bool TableExists(string table)
 		{
 			using (IDataReader reader =
-				ExecuteQuery(String.Format("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = lower('{0}')", table)))
+				ExecuteQuery(String.Format("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + _defaultSchemaConnection + "' AND table_name = lower('{0}')", table)))
 			{
 				return reader.Read();
 			}
@@ -117,7 +133,7 @@ namespace Migrator.Providers.PostgreSQL
 		public override string[] GetTables()
 		{
 			var tables = new List<string>();
-			using (IDataReader reader = ExecuteQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
+			using (IDataReader reader = ExecuteQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + _defaultSchemaConnection + "'"))
 			{
 				while (reader.Read())
 				{
@@ -133,7 +149,7 @@ namespace Migrator.Providers.PostgreSQL
 			using (
 				IDataReader reader =
 					ExecuteQuery(
-						String.Format("select COLUMN_NAME, IS_NULLABLE from information_schema.columns where table_schema = 'public' AND table_name = lower('{0}');", table)))
+						String.Format("select COLUMN_NAME, IS_NULLABLE from information_schema.columns where table_schema = '" + _defaultSchemaConnection + "' AND table_name = lower('{0}');", table)))
 			{
 				// FIXME: Mostly duplicated code from the Transformation provider just to support stupid case-insensitivty of Postgre
 				while (reader.Read())
