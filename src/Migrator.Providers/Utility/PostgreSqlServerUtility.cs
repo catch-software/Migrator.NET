@@ -27,7 +27,7 @@ namespace Migrator.Providers.Utility
 			}
 		}
 
-		static IEnumerable<string> GetAllTableNames(NpgsqlConnection connection , string defaultSchemaConnection)
+		static IEnumerable<string> GetAllTableNames(NpgsqlConnection connection , string defaultSchemaConnection = "public")
 		{
 			using (var command = new NpgsqlCommand("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + defaultSchemaConnection + "'", connection))
 			{
