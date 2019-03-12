@@ -7,15 +7,15 @@ namespace Migrator.Providers.Utility
 {
 	public static class PostgreSqlServerUtility
 	{
-		public static void RemoveAllTablesFromDefaultDatabase(string connectionString)
-		{
+	    public static void RemoveAllTablesFromDefaultDatabase(string connectionString, string defaultSchemaConnection = "public")
+        {
 			using (var connection = new NpgsqlConnection(connectionString))
 			{
 				connection.Open();
 
-				List<string> tableNames = GetAllTableNames(connection).ToList();
+			    List<string> tableNames = GetAllTableNames(connection, defaultSchemaConnection).ToList();
 
-				foreach (string table in tableNames)
+                foreach (string table in tableNames)
 				{
 					using (var command = new NpgsqlCommand(string.Format("DROP TABLE IF EXISTS {0} CASCADE", table), connection))
 					{
@@ -27,10 +27,10 @@ namespace Migrator.Providers.Utility
 			}
 		}
 
-		static IEnumerable<string> GetAllTableNames(NpgsqlConnection connection)
-		{
-			using (var command = new NpgsqlCommand("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'", connection))
-			{
+	    static IEnumerable<string> GetAllTableNames(NpgsqlConnection connection, string defaultSchemaConnection)
+	    {
+	        using (var command = new NpgsqlCommand("SELECT table_name FROM information_schema.tables WHERE table_schema = '" + defaultSchemaConnection + "'", connection))
+	        {
 				using (IDataReader reader = command.ExecuteReader(CommandBehavior.Default))
 				{
 					while (reader.Read())
