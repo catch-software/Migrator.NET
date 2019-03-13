@@ -11,3 +11,7 @@ release/
 
 /src/GlobalAssemblyInfo.cs
 *.gpState
+.vs/Migrator-vs2010/v15/Server/sqlite3/storage.ide-wal
+.vs/Migrator-vs2010/v15/Server/sqlite3/storage.ide-shm
+.vs/Migrator-vs2010/v15/Server/sqlite3/storage.ide
+.vs/Migrator-vs2010/v15/Server/sqlite3/db.lock

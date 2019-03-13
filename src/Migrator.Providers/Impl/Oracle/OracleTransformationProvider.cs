@@ -4,7 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using Migrator.Framework;
-using Oracle.DataAccess.Client;
+using Oracle.ManagedDataAccess.Client;
 using ForeignKeyConstraint = Migrator.Framework.ForeignKeyConstraint;
 
 namespace Migrator.Providers.Oracle
